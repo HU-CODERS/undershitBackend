@@ -25,7 +25,7 @@ app.use('/api/images', imageRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const ping = require('./routes/pingRoutes');
+const pingRoutes = require('./routes/pingRoutes');
 app.use("/api", pingRoutes);
 
 const PORT = process.env.PORT || 8000;
