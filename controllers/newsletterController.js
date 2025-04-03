@@ -62,8 +62,8 @@ exports.deleteSubscriber = async (req, res) => {
 // Configuración del transporter de Nodemailer
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587, // ⚠️ Para producción usa 465 y secure: true
-  secure: false, // false para 587 (TLS), true para 465 (SSL)
+  port: 465, // ⚠️ Para producción usa 465 y secure: true
+  secure: true, // false para 587 (TLS), true para 465 (SSL)
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
