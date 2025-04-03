@@ -1,8 +1,8 @@
-import express from "express";
-import { ping } from "../controllers/pingController.js";
-
+const express = require('express');
 const router = express.Router();
+const ping = require('../controllers/pingController');
 
-router.get("/ping", ping);
+router.get("/ping", ping.pong);
 
-export default router;
+module.exports = router;
+

@@ -1,4 +1,4 @@
-export const ping = (req, res) => {
+exports.pong = (req, res) => {
     res.status(200).json({ message: "pong" });
   };
   
