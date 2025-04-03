@@ -24,9 +24,13 @@ const imageRoutes = require('./routes/galleryRoutes');
 app.use('/api/images', imageRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
+app.use('/artistUpload', express.static(path.join(__dirname, 'artistUpload')));
 const pingRoutes = require('./routes/pingRoutes');
 app.use("/api", pingRoutes);
+
+const artistRoutes = require('./routes/artistRoutes');
+app.use('/api/artists', artistRoutes);
+
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
