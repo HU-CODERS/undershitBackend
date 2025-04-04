@@ -1,28 +1,73 @@
 const Subscriber = require('../models/Subscriber');
 const nodemailer = require('nodemailer');
 
-// Agregar un suscriptor
+// Enviar mensaje a los suscriptores
+// Configuración del transporter de Nodemailer
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465, // ⚠️ Para producción usa 465 y secure: true
+  secure: true, // false para 587 (TLS), true para 465 (SSL)
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false, // Para evitar errores SSL en localhost
+  },
+});
+
 exports.subscribe = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) {
-      console.error('❌ Error: Email requerido');
-      return res.status(400).json({ error: 'Email requerido' });
-    }
+    if (!email) return res.status(400).json({ error: 'Email requerido' });
 
     const exists = await Subscriber.findOne({ email });
-    if (exists) {
-      console.error(`❌ Error: El email ${email} ya está suscrito`);
-      return res.status(400).json({ error: 'Este email ya está suscrito' });
-    }
+    if (exists) return res.status(400).json({ error: 'Este email ya está suscrito' });
 
-    const newSubscriber = new Subscriber({ email });
+    // Generar un token único
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
+    // Crear suscriptor con token de verificación
+    const newSubscriber = new Subscriber({ email, verificationToken });
     await newSubscriber.save();
 
-    console.log(`✅ Suscripción exitosa: ${email}`);
-    res.status(201).json({ message: 'Suscripción exitosa', subscriber: newSubscriber });
+    // Enlace de verificación
+    const verificationLink = `https://undershit.com/verify?token=${verificationToken}`;
+
+    // Configurar el email
+    const mailOptions = {
+      from: `"UNDERSHIT RECORDS" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Verifica tu suscripción a la newsletter de UNDERSHIT',
+      html: `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
+             <a href="${verificationLink}">${verificationLink}</a>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(201).json({ message: 'Verificación enviada, revisa tu email' });
   } catch (error) {
     console.error('❌ Error al suscribir:', error);
+    res.status(500).json({ error: 'Error en el servidor' });
+  }
+};
+
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ error: 'Token requerido' });
+
+    const subscriber = await Subscriber.findOne({ verificationToken: token });
+    if (!subscriber) return res.status(400).json({ error: 'Token inválido o expirado' });
+
+    // Marcar como verificado y eliminar el token
+    subscriber.verified = true;
+    subscriber.verificationToken = null;
+    await subscriber.save();
+
+    res.status(200).json({ message: 'Email verificado con éxito' });
+  } catch (error) {
+    console.error('❌ Error verificando email:', error);
     res.status(500).json({ error: 'Error en el servidor' });
   }
 };
@@ -58,20 +103,7 @@ exports.deleteSubscriber = async (req, res) => {
   }
 };
 
-// Enviar mensaje a los suscriptores
-// Configuración del transporter de Nodemailer
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465, // ⚠️ Para producción usa 465 y secure: true
-  secure: true, // false para 587 (TLS), true para 465 (SSL)
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false, // Para evitar errores SSL en localhost
-  },
-});
+
 
 exports.sendNewsletter = async (req, res) => {
   try {
